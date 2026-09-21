@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logic Quest - เกมตรรกศาสตร์</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;background:linear-gradient(135deg,#172554,#581c87);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+.card{width:min(720px,100%);background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:24px;box-shadow:0 20px 60px #0005}
+h1{text-align:center;margin:4px 0 6px;font-size:32px}.sub{text-align:center;opacity:.85;margin-bottom:20px}
+.info{display:flex;justify-content:space-between;gap:10px;margin-bottom:16px}.pill{background:#0004;padding:8px 14px;border-radius:999px}
+.q{font-size:20px;font-weight:700;line-height:1.5;background:#0003;padding:18px;border-radius:16px;margin-bottom:14px}
+.answers{display:grid;gap:10px}.answers button{border:0;border-radius:14px;padding:14px;text-align:left;font-size:16px;cursor:pointer;background:#fff;color:#172554;transition:.15s}.answers button:hover{transform:translateY(-2px)}button.correct{background:#86efac!important}button.wrong{background:#fca5a5!important}
+#next,#start{width:100%;border:0;border-radius:14px;padding:14px;font-size:17px;font-weight:700;cursor:pointer;background:#fbbf24;color:#172554;margin-top:14px}
+#feedback{text-align:center;min-height:28px;margin-top:12px;font-weight:700}.hidden{display:none!important}
+.result{text-align:center}.result .score{font-size:52px;font-weight:800;color:#fde68a}
+.small{font-size:13px;opacity:.75;text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🧠 Logic Quest</h1>
+  <div class="sub">เกมพิชิตตรรกศาสตร์ • ตอบให้ครบ 10 ข้อ</div>
+
+  <div id="startScreen">
+    <div class="q">🎯 ภารกิจ: ทดสอบความเข้าใจเรื่องประพจน์ ตัวเชื่อมตรรกะ และค่าความจริง</div>
+    <p>ตอบคำถาม 10 ข้อ แต่ละข้อมีคำตอบที่ถูกต้องเพียง 1 ข้อ</p>
+    <button id="start">เริ่มเกม</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <div class="info"><div class="pill" id="progress">ข้อ 1/10</div><div class="pill">คะแนน: <span id="score">0</span></div></div>
+    <div class="q" id="question"></div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback"></div>
+    <button id="next" class="hidden">ข้อถัดไป ➜</button>
+  </div>
+
+  <div id="result" class="hidden result">
+    <h2>🎉 จบเกม!</h2>
+    <div class="score" id="finalScore">0/10</div>
+    <p id="message"></p>
+    <button id="restart">เล่นอีกครั้ง</button>
+  </div>
+  <div class="small">สร้างเพื่อใช้เป็นงานเกมออนไลน์เรื่อง “ตรรกศาสตร์”</div>
+</div>
+<script>
+const questions=[
+["ข้อใดเป็นประพจน์","วันนี้อากาศดีจัง","2 + 3 = 5","ช่วยปิดประตูหน่อย","เธอชื่ออะไร","2 + 3 = 5"],
+["สัญลักษณ์ ∧ หมายถึงอะไร","หรือ","และ","ถ้า...แล้ว","ก็ต่อเมื่อ","และ"],
+["สัญลักษณ์ ∨ หมายถึงอะไร","และ","ไม่","หรือ","ก็ต่อเมื่อ","หรือ"],
+["นิเสธของประพจน์ p เขียนอย่างไร","p∨q","p∧q","¬p","p→q","¬p"],
+["ถ้า p เป็นจริง และ q เป็นเท็จ แล้ว p ∧ q มีค่าความจริงใด","จริง","เท็จ","ทั้งสองอย่าง","สรุปไม่ได้","เท็จ"],
+["ถ้า p เป็นจริง และ q เป็นเท็จ แล้ว p ∨ q มีค่าความจริงใด","จริง","เท็จ","สรุปไม่ได้","ไม่มีค่าความจริง","จริง"],
+["ประพจน์ p → q จะเป็นเท็จในกรณีใด","p จริง q จริง","p จริง q เท็จ","p เท็จ q จริง","p เท็จ q เท็จ","p จริง q เท็จ"],
+["ถ้า p = จริง แล้ว ¬p มีค่าเป็นอะไร","จริง","เท็จ","สรุปไม่ได้","ไม่มีค่า","เท็จ"],
+["ข้อใดเป็นประพจน์เชิงซ้อน","5 เป็นจำนวนคี่","กรุงเทพฯ เป็นเมืองหลวงของไทย","วันนี้ฝนตกและฉันพกร่ม","ปิดไฟด้วย","วันนี้ฝนตกและฉันพกร่ม"],
+["ถ้า p และ q เป็นจริงทั้งคู่ แล้ว p ∧ q มีค่าเป็นอะไร","จริง","เท็จ","สรุปไม่ได้","ไม่เป็นประพจน์","จริง"]
+];
+let i=0,score=0,answered=false;
+const $=id=>document.getElementById(id);
+function start(){i=0;score=0;$("score").textContent=0;$("startScreen").classList.add("hidden");$("result").classList.add("hidden");$("game").classList.remove("hidden");show();}
+function show(){
+ answered=false;$("next").classList.add("hidden");$("feedback").textContent="";
+ const q=questions[i];$("progress").textContent=`ข้อ ${i+1}/${questions.length}`;$("question").textContent=q[0];
+ const a=$("answers");a.innerHTML="";
+ q.slice(1,5).forEach((x,n)=>{let b=document.createElement("button");b.textContent=`${String.fromCharCode(65+n)}. ${x}`;b.onclick=()=>answer(b,x===q[5]);a.appendChild(b);});
+}
+function answer(btn,ok){
+ if(answered)return;answered=true;
+ [...$("answers").children].forEach(b=>b.disabled=true);
+ if(ok){score++;$("score").textContent=score;btn.classList.add("correct");$("feedback").textContent="✅ ถูกต้อง!";}
+ else{btn.classList.add("wrong");$("feedback").textContent=`❌ ยังไม่ถูก คำตอบคือ ${questions[i][5]}`;}
+ $("next").classList.remove("hidden");
+}
+$("start").onclick=start;
+$("next").onclick=()=>{i++;if(i<questions.length)show();else finish();};
+function finish(){$("game").classList.add("hidden");$("result").classList.remove("hidden");$("finalScore").textContent=`${score}/${questions.length}`;$("message").textContent=score>=8?"เก่งมาก! เข้าใจตรรกศาสตร์ได้ดี 🎓":score>=5?"ทำได้ดี ลองทบทวนอีกนิดนะ 💪":"ลองเล่นใหม่และทบทวนเรื่องค่าความจริงอีกครั้ง 📚";}
+$("restart").onclick=start;
+</script>
+</body>
+</html>
